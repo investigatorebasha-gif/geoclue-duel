@@ -12,8 +12,11 @@ createRoot(document.getElementById('root')!).render(
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js').catch(() => {
-      // Offline support is helpful, but the game must still run without it.
-    });
+    navigator.serviceWorker
+      .register('./service-worker.js')
+      .then((registration) => registration.update())
+      .catch(() => {
+        // Offline support is helpful, but the game must still run without it.
+      });
   });
 }
