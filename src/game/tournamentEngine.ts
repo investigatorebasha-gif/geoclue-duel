@@ -13,6 +13,12 @@ export type TournamentFormat = {
   label: string;
 };
 
+export type TournamentGameResult = {
+  target: number;
+  scores: Record<string, number>;
+  winnerId: string;
+};
+
 export type TournamentMatch = {
   id: string;
   roundIndex: number;
@@ -23,6 +29,7 @@ export type TournamentMatch = {
   summary?: string;
   gameWins?: Record<string, number>;
   finalScore?: Record<string, number>;
+  gameResults?: TournamentGameResult[];
 };
 
 export type TournamentRound = {
@@ -147,6 +154,7 @@ export const simulateBotMatch = (
 ) => {
   const wins: Record<string, number> = { [playerA.id]: 0, [playerB.id]: 0 };
   const details: string[] = [];
+  const gameResults: TournamentGameResult[] = [];
   let finalScore: Record<string, number> = { [playerA.id]: 0, [playerB.id]: 0 };
 
   for (const target of format.targets) {
@@ -155,6 +163,7 @@ export const simulateBotMatch = (
     const winner = resultA.score >= resultB.score ? resultA : resultB;
     wins[winner.player.id] += 1;
     finalScore = { [playerA.id]: resultA.score, [playerB.id]: resultB.score };
+    gameResults.push({ target, scores: finalScore, winnerId: winner.player.id });
     details.push(`${winner.player.name} ha chiuso a ${target} con ${winner.guessedCountries} paesi indovinati.`);
 
     if (format.kind === 'best-of-3' && wins[winner.player.id] === 2) {
@@ -169,6 +178,7 @@ export const simulateBotMatch = (
     winnerId,
     gameWins: wins,
     finalScore,
+    gameResults,
     summary: `${winner.name} passa il turno. ${details.join(' ')}`,
   };
 };
@@ -180,12 +190,13 @@ export const completeTournamentMatch = (
   summary: string,
   gameWins?: Record<string, number>,
   finalScore?: Record<string, number>,
+  gameResults?: TournamentGameResult[],
 ): TournamentState => {
   const rounds = tournament.rounds.map((round) => ({
     ...round,
     matches: round.matches.map((match) =>
       match.id === matchId
-        ? { ...match, winnerId, status: 'complete' as const, summary, gameWins, finalScore }
+        ? { ...match, winnerId, status: 'complete' as const, summary, gameWins, finalScore, gameResults }
         : match,
     ),
   }));

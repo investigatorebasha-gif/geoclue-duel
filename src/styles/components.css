@@ -750,7 +750,8 @@
 }
 
 .bracket-round {
-  min-width: 280px;
+  min-width: 420px;
+  flex: 0 0 420px;
   display: grid;
   align-content: start;
   gap: 12px;
@@ -776,7 +777,7 @@
   box-shadow: none;
 }
 
-.bracket-match div {
+.participant-line {
   display: flex;
   justify-content: space-between;
   min-height: 38px;
@@ -791,8 +792,58 @@
   background: var(--green);
 }
 
-.bracket-match p,
-.bracket-match small {
+.match-score-table {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 10px;
+  background: rgb(0 0 0 / 14%);
+}
+
+.match-score-table > strong {
+  color: var(--gold);
+  font-size: 0.92rem;
+  text-transform: uppercase;
+}
+
+.score-line {
+  display: grid;
+  grid-template-columns: minmax(96px, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 7%);
+  color: #dbe6ff;
+  font-weight: 900;
+}
+
+.score-line span {
+  color: #aebce1;
+  font-size: 0.82rem;
+}
+
+.score-line b {
+  min-width: 28px;
+  text-align: center;
+  color: white;
+  font-size: 1.15rem;
+}
+
+.score-line small {
+  margin: 0;
+  color: #8496c4;
+}
+
+.score-line .score-winner {
+  color: #6cff68;
+}
+
+.bracket-match > p,
+.bracket-match > small {
   display: block;
   margin: 10px 0;
   color: var(--muted);
@@ -1772,12 +1823,12 @@
 
 .bracket-round h2,
 .bracket-round > small,
-.bracket-match p,
-.bracket-match small {
+.bracket-match > p,
+.bracket-match > small {
   color: #c1ccef;
 }
 
-.bracket-match div {
+.participant-line {
   color: white;
   background: rgb(255 255 255 / 8%);
 }
@@ -1809,6 +1860,7 @@
 
   .bracket-round {
     min-width: 0;
+    flex-basis: auto;
   }
 }
 

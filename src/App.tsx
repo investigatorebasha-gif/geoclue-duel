@@ -13,6 +13,7 @@ import {
   getReadyBotMatches,
   getTournamentFormat,
   simulateBotMatch,
+  type TournamentGameResult,
   type TournamentMatch,
   type TournamentState,
 } from './game/tournamentEngine';
@@ -159,6 +160,7 @@ const App = () => {
           result.summary,
           result.gameWins,
           result.finalScore,
+          result.gameResults,
         );
       }
 
@@ -174,12 +176,13 @@ const App = () => {
     summary: string,
     gameWins: Record<string, number>,
     finalScore: Record<string, number>,
+    gameResults?: TournamentGameResult[],
   ) => {
     if (!tournament) {
       return;
     }
 
-    setTournament(completeTournamentMatch(tournament, matchId, winnerId, summary, gameWins, finalScore));
+    setTournament(completeTournamentMatch(tournament, matchId, winnerId, summary, gameWins, finalScore, gameResults));
     setActiveTournamentMatch(null);
     setView('bracket');
   };

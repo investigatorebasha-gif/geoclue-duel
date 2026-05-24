@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Country } from '../data/countryTypes';
 import type { MatchConfig, MatchState, Player } from '../game/matchEngine';
-import type { TournamentFormat, TournamentMatch } from '../game/tournamentEngine';
+import type { TournamentFormat, TournamentGameResult, TournamentMatch } from '../game/tournamentEngine';
 import { GameScreen } from './GameScreen';
 import { MatchResultScreen } from './MatchResultScreen';
 
@@ -16,6 +16,7 @@ type TournamentMatchScreenProps = {
     summary: string,
     gameWins: Record<string, number>,
     finalScore: Record<string, number>,
+    gameResults?: TournamentGameResult[],
   ) => void;
 };
 
@@ -24,6 +25,7 @@ type SeriesResult = {
   summary: string;
   gameWins: Record<string, number>;
   finalScore: Record<string, number>;
+  gameResults: TournamentGameResult[];
 };
 
 export const TournamentMatchScreen = ({
@@ -41,6 +43,7 @@ export const TournamentMatchScreen = ({
   });
   const [betweenGames, setBetweenGames] = useState<string | null>(null);
   const [seriesResult, setSeriesResult] = useState<SeriesResult | null>(null);
+  const [gameResults, setGameResults] = useState<TournamentGameResult[]>([]);
 
   const currentTarget = format.targets[Math.min(gameIndex, format.targets.length - 1)];
   const config = useMemo<MatchConfig>(
@@ -77,12 +80,19 @@ export const TournamentMatchScreen = ({
       [result.winnerId]: (wins[result.winnerId] ?? 0) + 1,
     };
     const winner = players.find((player) => player.id === result.winnerId) ?? players[0];
+    const currentGameResult: TournamentGameResult = {
+      target: currentTarget,
+      scores: result.scores,
+      winnerId: result.winnerId,
+    };
+    const nextGameResults = [...gameResults, currentGameResult];
     const seriesIsComplete =
       format.kind === 'single' ||
       nextWins[result.winnerId] === 2 ||
       gameIndex >= format.targets.length - 1;
 
     setWins(nextWins);
+    setGameResults(nextGameResults);
 
     if (seriesIsComplete) {
       const seriesWinner =
@@ -92,6 +102,7 @@ export const TournamentMatchScreen = ({
         summary: `${seriesWinner.name} vince l'incontro ${nextWins[players[0].id] ?? 0}-${nextWins[players[1].id] ?? 0}. Ultima partita: ${result.scores[players[0].id]}-${result.scores[players[1].id]}.`,
         gameWins: nextWins,
         finalScore: result.scores,
+        gameResults: nextGameResults,
       });
       return;
     }
@@ -112,6 +123,7 @@ export const TournamentMatchScreen = ({
             seriesResult.summary,
             seriesResult.gameWins,
             seriesResult.finalScore,
+            seriesResult.gameResults,
           )
         }
       />

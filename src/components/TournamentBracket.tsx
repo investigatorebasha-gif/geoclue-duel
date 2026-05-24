@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { TournamentMatch, TournamentState } from '../game/tournamentEngine';
+import type { TournamentGameResult, TournamentMatch, TournamentState } from '../game/tournamentEngine';
 import { getTournamentFormat } from '../game/tournamentEngine';
 import { ConfirmExitModal } from './ConfirmExitModal';
 
@@ -16,6 +16,50 @@ const participantName = (match: TournamentMatch, index: 0 | 1) =>
 
 const hasHuman = (match: TournamentMatch) =>
   match.participants.some((participant) => participant?.kind === 'human');
+
+const matchResults = (match: TournamentMatch): TournamentGameResult[] => {
+  if (match.gameResults?.length) {
+    return match.gameResults;
+  }
+
+  if (match.finalScore && match.winnerId) {
+    return [{ target: 0, scores: match.finalScore, winnerId: match.winnerId }];
+  }
+
+  return [];
+};
+
+const MatchScoreTable = ({ match }: { match: TournamentMatch }) => {
+  const playerA = match.participants[0];
+  const playerB = match.participants[1];
+  const results = matchResults(match);
+
+  if (!playerA || !playerB || results.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="match-score-table" aria-label="Punteggi incontro">
+      {match.gameWins ? (
+        <strong>
+          Serie {match.gameWins[playerA.id] ?? 0} - {match.gameWins[playerB.id] ?? 0}
+        </strong>
+      ) : null}
+      {results.map((result, index) => (
+        <div className="score-line" key={`${match.id}-score-${index}`}>
+          <span>{result.target > 0 ? `Obiettivo ${result.target}` : 'Risultato'}</span>
+          <b className={result.winnerId === playerA.id ? 'score-winner' : ''}>
+            {result.scores[playerA.id] ?? 0}
+          </b>
+          <small>-</small>
+          <b className={result.winnerId === playerB.id ? 'score-winner' : ''}>
+            {result.scores[playerB.id] ?? 0}
+          </b>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export const TournamentBracket = ({
   tournament,
@@ -66,14 +110,14 @@ export const TournamentBracket = ({
             <div className="bracket-matches">
               {round.matches.map((match) => (
                 <article key={match.id} className={`bracket-match ${match.status}`}>
-                  <div className={match.winnerId === match.participants[0]?.id ? 'winner-line' : ''}>
+                  <div className={`participant-line ${match.winnerId === match.participants[0]?.id ? 'winner-line' : ''}`}>
                     <span>{participantName(match, 0)}</span>
                   </div>
-                  <div className={match.winnerId === match.participants[1]?.id ? 'winner-line' : ''}>
+                  <div className={`participant-line ${match.winnerId === match.participants[1]?.id ? 'winner-line' : ''}`}>
                     <span>{participantName(match, 1)}</span>
                   </div>
 
-                  {match.summary ? <p>{match.summary}</p> : null}
+                  {match.status === 'complete' ? <MatchScoreTable match={match} /> : null}
 
                   {match.status === 'ready' && hasHuman(match) ? (
                     <button className="small-action" type="button" onClick={() => onPlayMatch(match)}>
