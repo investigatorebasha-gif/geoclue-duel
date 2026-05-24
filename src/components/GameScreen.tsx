@@ -12,6 +12,8 @@ import {
   type MatchState,
 } from '../game/matchEngine';
 import { AttemptsList } from './AttemptsList';
+import { ConfirmExitModal } from './ConfirmExitModal';
+import { DuelRadar } from './DuelRadar';
 import { GuessInput } from './GuessInput';
 import { HintCard } from './HintCard';
 import { RoundResultModal } from './RoundResultModal';
@@ -25,6 +27,9 @@ type GameScreenProps = {
   onExit: () => void;
   onFinished?: (match: MatchState) => void;
   completionView?: 'victory' | 'return';
+  exitLabel?: string;
+  exitTitle?: string;
+  exitMessage?: string;
 };
 
 export const GameScreen = ({
@@ -33,10 +38,14 @@ export const GameScreen = ({
   onExit,
   onFinished,
   completionView = 'victory',
+  exitLabel = 'Abbandona partita',
+  exitTitle = 'Vuoi abbandonare la partita?',
+  exitMessage = 'I progressi della partita in corso non verranno salvati nelle statistiche.',
 }: GameScreenProps) => {
   const [match, setMatch] = useState(() => createMatch(config.players, config.targetScore, countries));
   const [showResult, setShowResult] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'wrong' | 'bot'>('idle');
 
   const currentPlayer = match.players[match.currentPlayerIndex];
@@ -194,10 +203,13 @@ export const GameScreen = ({
 
   return (
     <main className={`screen game-screen feedback-${feedback}`}>
-      <div className="game-topbar arcade-topbar">
-        <button className="ghost-action" type="button" onClick={onExit}>
-          Menu
+      <div className="game-command-bar" aria-label="Comandi partita">
+        <button className="danger-action" type="button" onClick={() => setShowExitConfirm(true)}>
+          {exitLabel}
         </button>
+      </div>
+
+      <div className="game-topbar arcade-topbar">
         <div>
           <p className="eyebrow">{targetLabel}</p>
           <h1>GeoClue Duel</h1>
@@ -240,6 +252,14 @@ export const GameScreen = ({
 
         <div className="side-panel">
           <HintCard hints={currentRound.revealedHints} hintsRevealed={currentRound.hintsRevealed} />
+          <DuelRadar
+            currentPlayer={currentPlayer}
+            roundNumber={match.roundNumber}
+            hintsRevealed={currentRound.hintsRevealed}
+            scores={match.scores}
+            players={match.players}
+            stats={match.stats}
+          />
         </div>
       </section>
 
@@ -249,6 +269,16 @@ export const GameScreen = ({
           playerName={currentPlayer.name}
           isMatchOver={Boolean(match.winnerId)}
           onNext={goNext}
+        />
+      ) : null}
+
+      {showExitConfirm ? (
+        <ConfirmExitModal
+          title={exitTitle}
+          message={exitMessage}
+          confirmLabel="Conferma abbandono"
+          onCancel={() => setShowExitConfirm(false)}
+          onConfirm={onExit}
         />
       ) : null}
     </main>

@@ -163,6 +163,9 @@ export const TournamentMatchScreen = ({
         onExit={onCancel}
         onFinished={finishGame}
         completionView="return"
+        exitLabel="Abbandona incontro"
+        exitTitle="Vuoi abbandonare questo incontro?"
+        exitMessage="Tornerai al tabellone. L'incontro manuale non verra completato."
       />
     </div>
   );
