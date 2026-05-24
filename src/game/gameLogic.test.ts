@@ -3,7 +3,7 @@ import { countries, countryCount } from '../data/countries';
 import { isCorrectGuess } from './guessMatching';
 import { getNextHint } from './hints';
 import { getScoreByHintsUsed } from './scoring';
-import { createTournament } from './tournamentEngine';
+import { createTournament, getTournamentFormat, simulateBotMatch } from './tournamentEngine';
 import { createPlayer } from './matchEngine';
 import { normalizeGuess } from '../utils/normalizeText';
 
@@ -62,5 +62,21 @@ describe('createTournament', () => {
     expect(tournament.rounds[0].matches).toHaveLength(4);
     expect(tournament.rounds[0].matches.flatMap((match) => match.participants)).toHaveLength(8);
     expect(tournament.rounds[0].matches.flatMap((match) => match.participants).filter(Boolean)).toHaveLength(8);
+  });
+});
+
+describe('simulateBotMatch', () => {
+  it('ends each simulated game when only one player has reached the target', () => {
+    const playerA = createPlayer('Bot A', 'bot');
+    const playerB = createPlayer('Bot B', 'bot');
+    const format = getTournamentFormat(8, 2, 75);
+    const result = simulateBotMatch(playerA, playerB, format, countries);
+    const game = result.gameResults[0];
+    const winnerScore = game.scores[game.winnerId];
+    const loserId = game.winnerId === playerA.id ? playerB.id : playerA.id;
+
+    expect(game.target).toBe(75);
+    expect(winnerScore).toBeGreaterThanOrEqual(75);
+    expect(game.scores[loserId]).toBeLessThan(75);
   });
 });

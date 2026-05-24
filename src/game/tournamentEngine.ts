@@ -129,21 +129,45 @@ export const createTournament = (
   };
 };
 
-const simulateScoreRace = (player: Player, countries: Country[], target: number) => {
-  let score = 0;
-  let roundsPlayed = 0;
-  let guessedCountries = 0;
+const simulateScoreTurn = (player: Player, countries: Country[]) => {
+  const country = sample(countries);
+  const round = simulateBotRound(country, countries, 'medium');
+  const points = round.correct ? getScoreByHintsUsed(round.hintsUsed) : 0;
 
-  while (score < target && roundsPlayed < 40) {
-    const country = sample(countries);
-    const round = simulateBotRound(country, countries, 'medium');
-    const points = round.correct ? getScoreByHintsUsed(round.hintsUsed) : 0;
-    score += points;
-    guessedCountries += round.correct ? 1 : 0;
-    roundsPlayed += 1;
+  return {
+    player,
+    points,
+    guessedCountries: round.correct ? 1 : 0,
+  };
+};
+
+const simulateTargetGame = (playerA: Player, playerB: Player, countries: Country[], target: number) => {
+  const scores: Record<string, number> = { [playerA.id]: 0, [playerB.id]: 0 };
+  const guessedCountries: Record<string, number> = { [playerA.id]: 0, [playerB.id]: 0 };
+  const players: [Player, Player] = Math.random() > 0.5 ? [playerA, playerB] : [playerB, playerA];
+  let turnIndex = 0;
+
+  while (scores[playerA.id] < target && scores[playerB.id] < target && turnIndex < 400) {
+    const player = players[turnIndex % 2];
+    const turn = simulateScoreTurn(player, countries);
+    scores[player.id] += turn.points;
+    guessedCountries[player.id] += turn.guessedCountries;
+
+    if (scores[player.id] >= target) {
+      return {
+        winnerId: player.id,
+        scores,
+        guessedCountries,
+      };
+    }
+
+    turnIndex += 1;
   }
 
-  return { player, score, roundsPlayed, guessedCountries };
+  const winnerId =
+    scores[playerA.id] >= scores[playerB.id] ? playerA.id : playerB.id;
+  scores[winnerId] = Math.max(scores[winnerId], target);
+  return { winnerId, scores, guessedCountries };
 };
 
 export const simulateBotMatch = (
@@ -158,15 +182,14 @@ export const simulateBotMatch = (
   let finalScore: Record<string, number> = { [playerA.id]: 0, [playerB.id]: 0 };
 
   for (const target of format.targets) {
-    const resultA = simulateScoreRace(playerA, countries, target);
-    const resultB = simulateScoreRace(playerB, countries, target);
-    const winner = resultA.score >= resultB.score ? resultA : resultB;
-    wins[winner.player.id] += 1;
-    finalScore = { [playerA.id]: resultA.score, [playerB.id]: resultB.score };
-    gameResults.push({ target, scores: finalScore, winnerId: winner.player.id });
-    details.push(`${winner.player.name} ha chiuso a ${target} con ${winner.guessedCountries} paesi indovinati.`);
+    const result = simulateTargetGame(playerA, playerB, countries, target);
+    wins[result.winnerId] += 1;
+    finalScore = result.scores;
+    gameResults.push({ target, scores: finalScore, winnerId: result.winnerId });
+    const winner = result.winnerId === playerA.id ? playerA : playerB;
+    details.push(`${winner.name} vince ${finalScore[playerA.id]}-${finalScore[playerB.id]}.`);
 
-    if (format.kind === 'best-of-3' && wins[winner.player.id] === 2) {
+    if (format.kind === 'best-of-3' && wins[result.winnerId] === 2) {
       break;
     }
   }

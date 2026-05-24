@@ -47,7 +47,7 @@ const MatchScoreTable = ({ match }: { match: TournamentMatch }) => {
       ) : null}
       {results.map((result, index) => (
         <div className="score-line" key={`${match.id}-score-${index}`}>
-          <span>{result.target > 0 ? `Obiettivo ${result.target}` : 'Risultato'}</span>
+          <span>{`Round ${index + 1}`}</span>
           <b className={result.winnerId === playerA.id ? 'score-winner' : ''}>
             {result.scores[playerA.id] ?? 0}
           </b>
