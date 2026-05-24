@@ -131,6 +131,29 @@ export const revealNextHint = (round: RoundState): RoundState => {
   };
 };
 
+const getWinnerAfterEqualTurns = (
+  players: [Player, Player],
+  scores: Record<string, number>,
+  stats: Record<string, PlayerStats>,
+  targetScore: number,
+): string | undefined => {
+  const [playerA, playerB] = players;
+  const playerARounds = stats[playerA.id].roundsPlayed;
+  const playerBRounds = stats[playerB.id].roundsPlayed;
+  const playerAScore = scores[playerA.id];
+  const playerBScore = scores[playerB.id];
+
+  if (playerARounds !== playerBRounds || Math.max(playerAScore, playerBScore) < targetScore) {
+    return undefined;
+  }
+
+  if (playerAScore === playerBScore) {
+    return undefined;
+  }
+
+  return playerAScore > playerBScore ? playerA.id : playerB.id;
+};
+
 export const completeRound = (
   match: MatchState,
   isCorrect: boolean,
@@ -146,18 +169,20 @@ export const completeRound = (
     totalPoints: currentStats.totalPoints + pointsEarned,
     roundsPlayed: currentStats.roundsPlayed + 1,
   };
-  const winnerId = nextScore >= match.targetScore ? playerId : undefined;
+  const nextScores = {
+    ...match.scores,
+    [playerId]: nextScore,
+  };
+  const nextStats = {
+    ...match.stats,
+    [playerId]: updatedStats,
+  };
+  const winnerId = getWinnerAfterEqualTurns(match.players, nextScores, nextStats, match.targetScore);
 
   return {
     ...match,
-    scores: {
-      ...match.scores,
-      [playerId]: nextScore,
-    },
-    stats: {
-      ...match.stats,
-      [playerId]: updatedStats,
-    },
+    scores: nextScores,
+    stats: nextStats,
     currentRound: {
       ...match.currentRound,
       attempts,

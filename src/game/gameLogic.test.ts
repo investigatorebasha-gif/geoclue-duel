@@ -4,7 +4,7 @@ import { isCorrectGuess } from './guessMatching';
 import { getNextHint } from './hints';
 import { getScoreByHintsUsed } from './scoring';
 import { createTournament, getTournamentFormat, simulateBotMatch } from './tournamentEngine';
-import { createPlayer } from './matchEngine';
+import { advanceTurn, completeRound, createMatch, createPlayer } from './matchEngine';
 import { normalizeGuess } from '../utils/normalizeText';
 
 describe('normalizeGuess', () => {
@@ -65,8 +65,43 @@ describe('createTournament', () => {
   });
 });
 
+describe('completeRound', () => {
+  it('gives the second player a final reply when the first player reaches the target', () => {
+    const playerA = createPlayer('Ada', 'human');
+    const playerB = createPlayer('Luca', 'human');
+    const firstComplete = completeRound(createMatch([playerA, playerB], 10, countries), true, [
+      { guess: 'Italia', isCorrect: true, hintsBeforeGuess: 0 },
+    ]);
+
+    expect(firstComplete.scores[playerA.id]).toBe(10);
+    expect(firstComplete.winnerId).toBeUndefined();
+
+    const secondTurn = advanceTurn(firstComplete, countries);
+    const tiedAfterReply = completeRound(secondTurn, true, [
+      { guess: 'Francia', isCorrect: true, hintsBeforeGuess: 0 },
+    ]);
+
+    expect(tiedAfterReply.scores[playerB.id]).toBe(10);
+    expect(tiedAfterReply.winnerId).toBeUndefined();
+
+    const tieBreakTurn = advanceTurn(tiedAfterReply, countries);
+    const firstPlayerAhead = completeRound(tieBreakTurn, true, [
+      { guess: 'Germania', isCorrect: true, hintsBeforeGuess: 0 },
+    ]);
+
+    expect(firstPlayerAhead.winnerId).toBeUndefined();
+
+    const finalReply = advanceTurn(firstPlayerAhead, countries);
+    const finished = completeRound(finalReply, false, [
+      { guess: 'Atlantide', isCorrect: false, hintsBeforeGuess: 6 },
+    ]);
+
+    expect(finished.winnerId).toBe(playerA.id);
+  });
+});
+
 describe('simulateBotMatch', () => {
-  it('ends each simulated game when only one player has reached the target', () => {
+  it('ends each simulated game after equal turns with the higher score winning', () => {
     const playerA = createPlayer('Bot A', 'bot');
     const playerB = createPlayer('Bot B', 'bot');
     const format = getTournamentFormat(8, 2, 75);
@@ -77,6 +112,6 @@ describe('simulateBotMatch', () => {
 
     expect(game.target).toBe(75);
     expect(winnerScore).toBeGreaterThanOrEqual(75);
-    expect(game.scores[loserId]).toBeLessThan(75);
+    expect(winnerScore).toBeGreaterThan(game.scores[loserId]);
   });
 });

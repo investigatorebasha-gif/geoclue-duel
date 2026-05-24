@@ -144,18 +144,25 @@ const simulateScoreTurn = (player: Player, countries: Country[]) => {
 const simulateTargetGame = (playerA: Player, playerB: Player, countries: Country[], target: number) => {
   const scores: Record<string, number> = { [playerA.id]: 0, [playerB.id]: 0 };
   const guessedCountries: Record<string, number> = { [playerA.id]: 0, [playerB.id]: 0 };
+  const turnsPlayed: Record<string, number> = { [playerA.id]: 0, [playerB.id]: 0 };
   const players: [Player, Player] = Math.random() > 0.5 ? [playerA, playerB] : [playerB, playerA];
   let turnIndex = 0;
 
-  while (scores[playerA.id] < target && scores[playerB.id] < target && turnIndex < 400) {
+  while (turnIndex < 400) {
     const player = players[turnIndex % 2];
     const turn = simulateScoreTurn(player, countries);
     scores[player.id] += turn.points;
     guessedCountries[player.id] += turn.guessedCountries;
+    turnsPlayed[player.id] += 1;
 
-    if (scores[player.id] >= target) {
+    const equalTurns = turnsPlayed[playerA.id] === turnsPlayed[playerB.id];
+    const targetReached = Math.max(scores[playerA.id], scores[playerB.id]) >= target;
+    const scoresAreDifferent = scores[playerA.id] !== scores[playerB.id];
+
+    if (equalTurns && targetReached && scoresAreDifferent) {
+      const winnerId = scores[playerA.id] > scores[playerB.id] ? playerA.id : playerB.id;
       return {
-        winnerId: player.id,
+        winnerId,
         scores,
         guessedCountries,
       };
